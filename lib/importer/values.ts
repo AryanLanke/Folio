@@ -39,7 +39,7 @@ export const list = (value: unknown): Record<string, unknown>[] =>
 // PDFs break lines where the page ran out, so a bullet can arrive in pieces. A piece that
 // starts in lowercase, or follows a line ending mid-phrase ("... compliance platform using"),
 // belongs to the bullet before it.
-export function joinSplitLines(items: string[]) {
+function joinSplitLines(items: string[]) {
   const joined: string[] = [];
   for (const line of items) {
     const previous = joined.at(-1);

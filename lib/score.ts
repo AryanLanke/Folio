@@ -9,7 +9,7 @@ import { matchResume } from "@/lib/jobmatch";
 import { type Resume, hasExperience, toLines } from "@/lib/resume";
 import { plainResume } from "@/lib/rich";
 
-export type ScoreItem = {
+type ScoreItem = {
   label: string;
   // 0 to 1
   score: number;
@@ -18,7 +18,7 @@ export type ScoreItem = {
   fix?: string | null;
 };
 
-export type ScorePart = {
+type ScorePart = {
   key: "ats" | "writing" | "job";
   label: string;
   // 0 to 100
