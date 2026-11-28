@@ -1,7 +1,8 @@
 // Cover letters written from the resume itself, so every claim comes from the person's own facts.
 
+import { parseJsonReply, textField } from "@/lib/ai";
 import { resumeToPlainText } from "@/lib/ats";
-import { BANNED_WORDS } from "@/lib/enhance";
+import { BANNED_WORDS, plainCharacters } from "@/lib/enhance";
 import type { Resume } from "@/lib/resume";
 
 export type CoverLetterRequest = {
@@ -23,12 +24,11 @@ export function coverLetterRequest(resume: Resume): CoverLetterRequest {
 export function validateCoverLetter(body: unknown): CoverLetterRequest | null {
   if (!body || typeof body !== "object") return null;
   const src = body as Record<string, unknown>;
-  const text = (value: unknown, max: number) => (typeof value === "string" ? value.trim().slice(0, max) : "");
   const request = {
-    resumeText: text(src.resumeText, 12000),
-    jobDescription: text(src.jobDescription, 8000),
-    jobTitle: text(src.jobTitle, 120),
-    company: text(src.company, 120),
+    resumeText: textField(src.resumeText, 12000),
+    jobDescription: textField(src.jobDescription, 8000),
+    jobTitle: textField(src.jobTitle, 120),
+    company: textField(src.company, 120),
   };
   return request.resumeText.length >= 50 ? request : null;
 }
@@ -74,10 +74,10 @@ export function buildFactCheckMessages(resumeText: string, letter: string) {
     "You fact-check cover letters against the resume they were written from.",
     "",
     "Remove or rewrite every phrase that states something the resume does not, including:",
-    "- how often, how much or how large something was (\"daily\", \"large data sets\", \"millions\")",
-    "- who used or benefited from the work, or what it was used for (\"for the pricing team\", \"to monitor KPIs\")",
+    '- how often, how much or how large something was ("daily", "large data sets", "millions")',
+    '- who used or benefited from the work, or what it was used for ("for the pricing team", "to monitor KPIs")',
     "- outcomes, responsibilities, methods, tools or skills that aren't in the resume",
-    "- claimed qualities (\"attention to detail\", \"strong communicator\") that the resume doesn't show",
+    '- claimed qualities ("attention to detail", "strong communicator") that the resume doesn\'t show',
     "",
     "Keep: the greeting, the sign-off, mentions of the role and company, statements of interest, and every claim the resume supports.",
     "Change as little as possible. Don't add anything new. Keep the paragraph structure.",
@@ -92,26 +92,20 @@ export function buildFactCheckMessages(resumeText: string, letter: string) {
 }
 
 export function parseCoverLetter(raw: unknown): string | null {
-  if (typeof raw !== "string") return null;
-  try {
-    const data = JSON.parse(raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, ""));
-    const paragraphs = (Array.isArray(data?.paragraphs) ? data.paragraphs : [])
-      .filter((p: unknown): p is string => typeof p === "string")
-      .map((p: string) => p.trim())
-      .filter(Boolean);
-    if (paragraphs.length < 2) return null;
-    return paragraphs
+  const data = parseJsonReply(raw);
+  if (!data) return null;
+  const paragraphs = (Array.isArray(data.paragraphs) ? data.paragraphs : [])
+    .filter((p: unknown): p is string => typeof p === "string")
+    .map((p: string) => p.trim())
+    .filter(Boolean);
+  if (paragraphs.length < 2) return null;
+  return plainCharacters(
+    paragraphs
       .join("\n\n")
       // The greeting and sign-off get their own paragraphs even when the model glues them on
       .replace(/^(Dear [^,\n]{1,60},)[ \t]*(?=\S)/, "$1\n\n")
       .replace(/[ \t]*\n?[ \t]*(Sincerely,|Regards,|Best regards,|Kind regards,)[ \t]*\n?[ \t]*/g, "\n\n$1\n")
       .replace(/\n{3,}/g, "\n\n")
-      .trim()
-      .replace(/[‐‑‒−]/g, "-")
-      .replace(/[   ]/g, " ")
-      .replace(/[‘’]/g, "'")
-      .replace(/[“”]/g, '"');
-  } catch {
-    return null;
-  }
+      .trim(),
+  );
 }

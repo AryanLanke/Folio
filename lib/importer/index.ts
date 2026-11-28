@@ -15,6 +15,7 @@ import {
   newExperience,
   newProject,
 } from "@/lib/resume";
+import { parseJsonReply } from "@/lib/ai";
 import { date, extraSection, lines, list, otherSections, parseSkills, str } from "@/lib/importer/values";
 import { sortLinks } from "@/lib/importer/repo-links";
 
@@ -32,15 +33,8 @@ function mergeSameKind(sections: ExtraSection[]) {
 
 // Turns the model's JSON into a Folio resume, or null if nothing useful came back
 export function parseImport(raw: unknown): Resume | null {
-  if (typeof raw !== "string") return null;
-  let data: Record<string, unknown>;
-  try {
-    const parsed = JSON.parse(raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, ""));
-    if (!parsed || typeof parsed !== "object") return null;
-    data = parsed;
-  } catch {
-    return null;
-  }
+  const data = parseJsonReply(raw);
+  if (!data) return null;
 
   const resume = createEmptyResume();
   const basics = (data.basics && typeof data.basics === "object" ? data.basics : {}) as Record<string, unknown>;

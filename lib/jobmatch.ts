@@ -1,6 +1,7 @@
 // Job match: AI reads a job posting once and lists what it asks for; matching against the
 // resume then happens in the browser, instantly, every time the resume changes.
 
+import { parseJsonReply } from "@/lib/ai";
 import { resumeToPlainText } from "@/lib/ats";
 import type { Resume } from "@/lib/resume";
 
@@ -36,15 +37,8 @@ export function buildJobMessages(description: string) {
 }
 
 export function parseJobAnalysis(raw: unknown): JobAnalysis | null {
-  if (typeof raw !== "string") return null;
-  let data: unknown;
-  try {
-    data = JSON.parse(raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, ""));
-  } catch {
-    return null;
-  }
-  if (!data || typeof data !== "object") return null;
-  const src = data as Record<string, unknown>;
+  const src = parseJsonReply(raw);
+  if (!src) return null;
   const seen = new Set<string>();
   const keywords = (Array.isArray(src.keywords) ? src.keywords : [])
     .filter((k): k is string => typeof k === "string")

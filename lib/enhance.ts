@@ -1,6 +1,7 @@
 // "Enhance with AI": polishes text the user already wrote. It may fix grammar and wording,
 // but must never add facts. Shared by the server route and the editor.
 
+import { keywords, parseJsonReply } from "@/lib/ai";
 import { plainText } from "@/lib/rich";
 
 export type EnhanceKind = "summary" | "bullets";
@@ -89,9 +90,7 @@ export function validateRequest(body: unknown): EnhanceRequest | string {
     previous,
     role: typeof src.role === "string" ? src.role.slice(0, 200) : undefined,
     current: src.current === true,
-    focus: Array.isArray(src.focus)
-      ? src.focus.filter((k): k is string => typeof k === "string" && k.trim() !== "").map((k) => k.slice(0, 60)).slice(0, 25)
-      : undefined,
+    focus: keywords(src.focus),
   };
 }
 
@@ -164,16 +163,8 @@ export function cleanLine(line: string) {
 }
 
 export function parseResult(raw: unknown, kind: EnhanceKind): EnhanceResult | null {
-  if (typeof raw !== "string") return null;
-  let data: unknown;
-  try {
-    // Some models wrap JSON in a ```json code fence
-    data = JSON.parse(raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, ""));
-  } catch {
-    return null;
-  }
-  if (!data || typeof data !== "object") return null;
-  const src = data as Record<string, unknown>;
+  const src = parseJsonReply(raw);
+  if (!src) return null;
 
   const rawLines = Array.isArray(src.lines) ? src.lines : typeof src.lines === "string" ? [src.lines] : [];
   let lines = rawLines

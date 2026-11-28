@@ -1,6 +1,7 @@
 // "Tell AI about yourself": a short chat where AI asks about someone's work, then writes a
 // resume from what they said. Every fact comes from the person; the AI only organizes and words it.
 
+import { parseJsonReply } from "@/lib/ai";
 import { BANNED_WORDS, INVOLVEMENT_RULE } from "@/lib/enhance";
 import { RESUME_SHAPE } from "@/lib/importer";
 import { PRESENT } from "@/lib/resume";
@@ -62,14 +63,10 @@ export function buildInterviewMessages(turns: ChatTurn[]) {
 }
 
 export function parseInterviewReply(raw: unknown): { reply: string; ready: boolean } | null {
-  if (typeof raw !== "string") return null;
-  try {
-    const data = JSON.parse(raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, ""));
-    const reply = typeof data?.reply === "string" ? data.reply.trim() : "";
-    return reply ? { reply: reply.slice(0, 1500), ready: data.ready === true } : null;
-  } catch {
-    return null;
-  }
+  const data = parseJsonReply(raw);
+  if (!data) return null;
+  const reply = typeof data.reply === "string" ? data.reply.trim() : "";
+  return reply ? { reply: reply.slice(0, 1500), ready: data.ready === true } : null;
 }
 
 export function buildDraftMessages(turns: ChatTurn[]) {
