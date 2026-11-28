@@ -1,4 +1,5 @@
-# Opens pull requests when a package has a security fix or a new version, so CI can check it
+# Opens pull requests when a package has a security fix or a new version, so CI can check it.
+# dependabot-auto-merge.yml merges each one once that check passes.
 version: 2
 updates:
   - package-ecosystem: npm

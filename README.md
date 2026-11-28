@@ -1,5 +1,8 @@
 # Folio
 
+[![CI](https://github.com/AryanLanke/Folio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AryanLanke/Folio/actions/workflows/ci.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **The resume builder that's actually free.**
 
 No sign-up. No watermark. No "upgrade to download" after you've typed everything in.
