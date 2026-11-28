@@ -24,6 +24,9 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    # There is no checkout here, so tell gh which repository to work on
+    env:
+      GH_REPO: ${{ github.repository }}
     steps:
       - name: Find the Dependabot pull request
         id: pr
