@@ -3,12 +3,13 @@
 // rules as Enhance. Anything in the AI's answer that could add a fact is thrown away here.
 // Shared by the server route and the builder.
 
+import { keywords, parseJsonReply, textField } from "@/lib/ai";
 import { BANNED_WORDS, INVOLVEMENT_RULE, MAX_INPUT_LENGTH, cleanLine } from "@/lib/enhance";
 import { PRESENT, type Resume, type ResumeStyle, TEMPLATES, hasExperience, hasProject, toLines } from "@/lib/resume";
 import { plainResume, plainText } from "@/lib/rich";
 
 // One job or project: its bullets, and enough context for the AI to word them well
-export type OptimizeItem = { id: string; context: string; current: boolean; bullets: string[] };
+type OptimizeItem = { id: string; context: string; current: boolean; bullets: string[] };
 export type OptimizeRequest = { title: string; summary: string; items: OptimizeItem[]; focus: string[] };
 export type OptimizeResult = { summary: string; items: { id: string; bullets: string[] }[] };
 
@@ -44,7 +45,6 @@ export function optimizeRequest(resume: Resume): OptimizeRequest {
 export function validateOptimize(body: unknown): OptimizeRequest | null {
   if (!body || typeof body !== "object") return null;
   const src = body as Record<string, unknown>;
-  const text = (value: unknown, max: number) => (typeof value === "string" ? value.trim().slice(0, max) : "");
 
   const items = (Array.isArray(src.items) ? src.items : []).slice(0, MAX_ITEMS).flatMap((raw): OptimizeItem[] => {
     if (!raw || typeof raw !== "object") return [];
@@ -53,16 +53,15 @@ export function validateOptimize(body: unknown): OptimizeRequest | null {
       .filter((line): line is string => typeof line === "string" && line.trim() !== "")
       .slice(0, MAX_BULLETS)
       .map((line) => line.trim().slice(0, MAX_LINE));
-    const id = text(item.id, 40);
-    return id && bullets.length > 0 ? [{ id, context: text(item.context, 200), current: item.current === true, bullets }] : [];
+    const id = textField(item.id, 40);
+    return id && bullets.length > 0
+      ? [{ id, context: textField(item.context, 200), current: item.current === true, bullets }]
+      : [];
   });
-  const summary = text(src.summary, MAX_INPUT_LENGTH);
+  const summary = textField(src.summary, MAX_INPUT_LENGTH);
   if (!summary && items.length === 0) return null;
 
-  const focus = Array.isArray(src.focus)
-    ? src.focus.filter((k): k is string => typeof k === "string" && k.trim() !== "").map((k) => k.slice(0, 60)).slice(0, 25)
-    : [];
-  const request = { title: text(src.title, 200), summary, items, focus };
+  const request = { title: textField(src.title, 200), summary, items, focus: keywords(src.focus) };
   return JSON.stringify(request).length > MAX_TOTAL ? null : request;
 }
 
@@ -111,15 +110,8 @@ export function keepsFacts(original: string, rewritten: string) {
 // Takes the AI's answer apart. Bullets only replace the originals when the count matches and
 // no new numbers appear; otherwise that bullet (or item) keeps the person's own words.
 export function parseOptimize(raw: unknown, request: OptimizeRequest): OptimizeResult | null {
-  if (typeof raw !== "string") return null;
-  let data: unknown;
-  try {
-    data = JSON.parse(raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, ""));
-  } catch {
-    return null;
-  }
-  if (!data || typeof data !== "object") return null;
-  const src = data as Record<string, unknown>;
+  const src = parseJsonReply(raw);
+  if (!src) return null;
 
   const returned = new Map<string, string[]>();
   for (const item of Array.isArray(src.items) ? src.items : []) {
