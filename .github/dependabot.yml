@@ -10,6 +10,11 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    # TypeScript 7 is a major rewrite the app is not ready for yet. Remove this
+    # when its typecheck passes, so the update comes back for CI to judge.
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
 
   - package-ecosystem: github-actions
