@@ -13,16 +13,16 @@
   },
   "dependencies": {
     "@react-pdf/renderer": "4.9.1",
-    "@sentry/nextjs": "11.17.0",
+    "@sentry/nextjs": "11.18.0",
     "docx": "9.16.0",
     "jszip": "3.10.2",
     "next": "16.4.6",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "unpdf": "2.2.1"
+    "unpdf": "2.2.2"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.14.0",
+    "@axe-core/playwright": "^4.14.1",
     "@playwright/test": "^1.65.1",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^26",
