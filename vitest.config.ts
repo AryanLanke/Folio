@@ -5,7 +5,6 @@ export default defineConfig({
   resolve: {
     alias: { "@": fileURLToPath(new URL("./", import.meta.url)) },
   },
-  esbuild: { jsx: "automatic" },
   test: {
     include: ["lib/**/*.test.{ts,tsx}"],
     // Generating real PDFs takes a few seconds the first time

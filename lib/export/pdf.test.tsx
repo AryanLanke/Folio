@@ -109,7 +109,7 @@ describe("links in the PDF", () => {
     expect(text).toContain("LinkedIn");
     expect(text).toContain("GitHub");
     expect(text).not.toContain("linkedin.com/in");
-    expect(links).toEqual(
+    expect(links.flat()).toEqual(
       expect.arrayContaining([
         "mailto:emily.carter@example.com",
         "https://linkedin.com/in/emily-carter-example",
