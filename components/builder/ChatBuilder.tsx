@@ -6,6 +6,7 @@ import { useEscape } from "@/components/ui/useEscape";
 import { callAi } from "@/lib/client/ai";
 import { type ChatTurn, MAX_TURNS, OPENING } from "@/lib/interview";
 import { type Resume, normalizeResume } from "@/lib/resume";
+import { joinResults, joinSpoken } from "@/lib/speech";
 
 // The browser's built-in speech-to-text (Chrome, Edge, Safari). Not in TypeScript's DOM types yet.
 type Recognition = {
@@ -25,41 +26,6 @@ function createRecognition(): Recognition | null {
   const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
   return Ctor ? new Ctor() : null;
 }
-
-// Chrome on Android repeats earlier words in later results ("Honestly.", "honestly I didn't", ...),
-// so words are compared without case or punctuation when joining results.
-const wordKey = (word: string) => word.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
-
-const startsWithWords = (words: string[], start: string[]) => start.every((w, i) => words[i] === w);
-
-// Adds `next` onto `prev`, dropping the words `next` repeats
-function mergeWords(prev: string[], next: string[]): string[] {
-  const a = prev.map(wordKey);
-  const b = next.map(wordKey);
-  // `next` is everything so far and more, or just a repeat of words we already have
-  if (startsWithWords(b, a)) return next;
-  if (startsWithWords(a, b)) return prev;
-  // `next` picks up partway: skip the words where the end of `prev` and the start of `next` overlap
-  for (let k = Math.min(a.length, b.length) - 1; k > 0; k--) {
-    if (startsWithWords(b, a.slice(a.length - k))) return [...prev, ...next.slice(k)];
-  }
-  return [...prev, ...next];
-}
-
-// Joins a listening session's results into one transcript
-function joinResults(results: ArrayLike<ArrayLike<{ transcript: string }>>): string {
-  let words: string[] = [];
-  for (let i = 0; i < results.length; i++) {
-    words = mergeWords(words, results[i][0].transcript.split(/\s+/).filter(Boolean));
-  }
-  return words.join(" ");
-}
-
-const joinSpoken = (before: string, spoken: string) => {
-  const words = spoken.trim();
-  if (!words) return before;
-  return before ? `${before.trimEnd()} ${words}` : words;
-};
 
 // "Build with AI": chat (or talk) about your work, and AI writes the resume from it.
 // Chat messages are free; only "Create my resume" uses one of the daily AI actions.
